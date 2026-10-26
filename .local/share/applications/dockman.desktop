@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Docker TUI Manager (Dockman)
+Comment=Interactive Docker Container Manager with ASCII Art for Beginners
+Exec=kitty --class dockman-term -T "🐳 Docker TUI Manager" -e /home/ario/.local/bin/dockman
+Icon=docker
+Terminal=false
+Type=Application
+Categories=Development;System;Utility;
+Keywords=docker;container;dockman;manager;tui;devops;

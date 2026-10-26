@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Git Project Manager (Gitman)
+Comment=Git Project & Repository Dashboard TUI
+Exec=kitty --class gitman-term -T "󰊢 Git Project Dashboard (Gitman)" -e /home/ario/.local/bin/gitman
+Icon=git
+Terminal=false
+Type=Application
+Categories=Development;Utility;
+Keywords=git;repo;repository;github;gitman;

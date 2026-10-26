@@ -1,0 +1,70 @@
+configuration {
+    show-icons:      false;
+    hover-select:    true;
+    me-select-entry: "";
+    me-accept-entry: "MousePrimary";
+}
+
+@import "colors.rasi"
+
+* {
+    font: "JetBrainsMono Nerd Font 10";
+}
+
+window {
+    width:            320px;
+    border:           2px;
+    border-radius:    10px;
+    border-color:     @border-col;
+    background-color: @bg-col;
+    padding:          8px;
+    location:         northwest;
+}
+
+mainbox {
+    background-color: transparent;
+    children:         [ inputbar, listview ];
+    spacing:          6px;
+}
+
+inputbar {
+    background-color: @bg-col-light;
+    children:         [ prompt ];
+    border-radius:    6px;
+    padding:          6px 12px;
+}
+
+prompt {
+    background-color: transparent;
+    text-color:       @mauve;
+    font:             "JetBrainsMono Nerd Font Bold 10";
+}
+
+listview {
+    background-color: transparent;
+    columns:          1;
+    lines:            20;
+    spacing:          2px;
+    cycle:            true;
+    dynamic:          true;
+    scrollbar:        false;
+}
+
+element {
+    background-color: transparent;
+    text-color:       @fg-col;
+    border-radius:    6px;
+    padding:          6px 10px;
+    cursor:           pointer;
+}
+
+element selected {
+    background-color: @selected-col;
+    text-color:       @mauve;
+}
+
+element-text {
+    background-color: transparent;
+    text-color:       inherit;
+    cursor:           pointer;
+}

@@ -1,0 +1,609 @@
+#!/usr/bin/env bash
+
+# ==============================================================================
+#  DOCKER TUI MANAGER - TERMINAL USER INTERFACE UNTUK DOCKER
+# ==============================================================================
+# Dirancang khusus untuk mempermudah pengguna mengelola container Docker
+# tanpa perlu menghafal perintah CLI yang rumit.
+# ==============================================================================
+
+# Definisi TrueColor ANSI
+BOLD="\033[1m"
+DIM="\033[2m"
+ITALIC="\033[3m"
+RESET="\033[0m"
+
+# Palet Warna Docker / Catppuccin / Modern
+C_DOCKER_BLUE="\033[38;2;36;150;237m"
+C_CYAN="\033[38;2;0;240;255m"
+C_TEAL="\033[38;2;6;214;160m"
+C_GREEN="\033[38;2;166;227;161m"
+C_YELLOW="\033[38;2;255;183;3m"
+C_ORANGE="\033[38;2;254;128;25m"
+C_RED="\033[38;2;243;139;168m"
+C_PURPLE="\033[38;2;203;166;247m"
+C_WHITE="\033[38;2;240;246;252m"
+C_GRAY="\033[38;2;110;118;129m"
+C_DARK="\033[38;2;49;50;68m"
+
+# Pastikan Docker terinstall
+if ! command -v docker &>/dev/null; then
+    clear
+    echo -e "${C_RED}${BOLD}❌ ERROR: Docker belum terinstal di sistem ini!${RESET}"
+    echo "Silakan install Docker terlebih dahulu menggunakan: sudo apt install docker.io"
+    exit 1
+fi
+
+# Fungsi Header Banner dengan Docker Whale ASCII Art
+draw_banner() {
+    clear
+    # Mengambil statistik docker
+    local RUNNING=0
+    local TOTAL=0
+    local IMAGES=0
+    local VOLUMES=0
+    local DOCKER_VER="Unknown"
+    local DAEMON_STATUS="${C_RED}● Nonaktif${RESET}"
+
+    if docker info >/dev/null 2>&1; then
+        RUNNING=$(docker ps -q 2>/dev/null | wc -l)
+        TOTAL=$(docker ps -aq 2>/dev/null | wc -l)
+        IMAGES=$(docker images -q 2>/dev/null | wc -l)
+        VOLUMES=$(docker volume ls -q 2>/dev/null | wc -l)
+        DOCKER_VER=$(docker version --format '{{.Server.Version}}' 2>/dev/null || echo "v29.x")
+        DAEMON_STATUS="${C_GREEN}${BOLD}● Aktif (Running)${RESET}"
+    fi
+    local STOPPED=$((TOTAL - RUNNING))
+
+    echo -e "${C_DOCKER_BLUE}${BOLD}"
+    cat << "EOF"
+                ##         .
+          ## ## ##        ==
+       ## ## ## ## ##    ===
+   /""""""""""""""""""\___/ ===
+  {                       /  ===-
+   \______ O           __/
+     \    \         __/
+      \____\_______/
+EOF
+    echo -e "${RESET}"
+    echo -e "  ${C_DOCKER_BLUE}${BOLD}󰡨  DOCKER TUI MANAGER${RESET}  ${C_GRAY}│  Sistem Manajemen Container Ramah Pemula${RESET}"
+    echo -e "  ${C_GRAY}──────────────────────────────────────────────────────────────────────────────${RESET}"
+    echo -e "  ${C_WHITE}Status Engine : ${DAEMON_STATUS}  ${C_GRAY}│${RESET}  ${C_WHITE}Versi Server : ${C_CYAN}Docker ${DOCKER_VER}${RESET}"
+    echo -e "  ${C_WHITE}Containers    : ${C_GREEN}${RUNNING} Berjalan${RESET} ${C_GRAY}│${RESET} ${C_RED}${STOPPED} Berhenti${RESET} ${C_GRAY}│${RESET} ${C_YELLOW}${TOTAL} Total${RESET}"
+    echo -e "  ${C_WHITE}Storage & Res : ${C_PURPLE}${IMAGES} Image${RESET} ${C_GRAY}│${RESET} ${C_TEAL}${VOLUMES} Volume${RESET}"
+    echo -e "  ${C_GRAY}──────────────────────────────────────────────────────────────────────────────${RESET}"
+    echo ""
+}
+
+pause_prompt() {
+    echo ""
+    echo -e "${C_GRAY}──────────────────────────────────────────────────────────────────────────────${RESET}"
+    echo -e -n "${C_YELLOW} Tekan [ENTER] untuk kembali ke Menu Utama...${RESET}"
+    read -r
+}
+
+# 1. LIHAT DAFTAR CONTAINER
+menu_list_containers() {
+    draw_banner
+    echo -e "${C_CYAN}${BOLD} 📋 DAFTAR CONTAINER DOCKER SAAT INI${RESET}"
+    echo -e "${C_GRAY} ──────────────────────────────────────────────────────────────────────────────${RESET}"
+    
+    if [ "$(docker ps -aq 2>/dev/null | wc -l)" -eq 0 ]; then
+        echo ""
+        echo -e "  ${C_YELLOW}⚠️  Belum ada container yang dibuat di sistem ini.${RESET}"
+        echo -e "  ${C_GRAY}Gunakan menu [9] untuk meluncurkan container baru dengan wizard cepat!${RESET}"
+    else
+        echo ""
+        docker ps -a --format "table {{.Names}}\t{{.Image}}\t{{.Status}}\t{{.Ports}}" | while IFS= read -r line; do
+            if [[ "$line" =~ ^NAMES ]]; then
+                echo -e "  ${C_PURPLE}${BOLD}$line${RESET}"
+            elif [[ "$line" =~ Up ]]; then
+                echo -e "  ${C_GREEN}$line${RESET}"
+            else
+                echo -e "  ${C_RED}$line${RESET}"
+            fi
+        done
+    fi
+    pause_prompt
+}
+
+# 2. NYALAKAN CONTAINER (START)
+menu_start_container() {
+    draw_banner
+    echo -e "${C_GREEN}${BOLD} ▶️  NYALAKAN CONTAINER (START)${RESET}"
+    echo -e "${C_GRAY} ──────────────────────────────────────────────────────────────────────────────${RESET}"
+    
+    mapfile -t STOPPED_CONTAINERS < <(docker ps -a --filter "status=exited" --filter "status=created" --format "{{.Names}} ({{.Image}})")
+    
+    if [ ${#STOPPED_CONTAINERS[@]} -eq 0 ]; then
+        echo ""
+        echo -e "  ${C_YELLOW}ℹ️  Tidak ada container yang sedang berhenti (semua sudah aktif atau belum ada).${RESET}"
+        pause_prompt
+        return
+    fi
+    
+    echo ""
+    echo -e "  Pilih nomor container yang ingin Anda nyalakan:"
+    echo ""
+    for i in "${!STOPPED_CONTAINERS[@]}"; do
+        printf "  ${C_CYAN}[%d]${RESET} %s\n" "$((i+1))" "${STOPPED_CONTAINERS[$i]}"
+    done
+    echo ""
+    echo -e "  ${C_GRAY}[0] Batal & Kembali${RESET}"
+    echo ""
+    echo -n -e "  ${C_YELLOW}Ketik nomor pilihan [1-${#STOPPED_CONTAINERS[@]}]: ${RESET}"
+    read -r CHOICE
+    
+    if [[ "$CHOICE" =~ ^[0-9]+$ ]] && [ "$CHOICE" -ge 1 ] && [ "$CHOICE" -le "${#STOPPED_CONTAINERS[@]}" ]; then
+        TARGET=$(echo "${STOPPED_CONTAINERS[$((CHOICE-1))]}" | awk '{print $1}')
+        echo ""
+        echo -e "  ${C_BLUE}⏳ Menyalakan container ${TARGET}...${RESET}"
+        if docker start "$TARGET" >/dev/null 2>&1; then
+            echo -e "  ${C_GREEN}${BOLD}✅ Berhasil! Container '${TARGET}' sekarang sudah berjalan.${RESET}"
+        else
+            echo -e "  ${C_RED}❌ Gagal menyalakan container '${TARGET}'. Periksa log container.${RESET}"
+        fi
+    fi
+    pause_prompt
+}
+
+# 3. HENTIKAN CONTAINER (STOP)
+menu_stop_container() {
+    draw_banner
+    echo -e "${C_RED}${BOLD} ⏹️  HENTIKAN CONTAINER (STOP)${RESET}"
+    echo -e "${C_GRAY} ──────────────────────────────────────────────────────────────────────────────${RESET}"
+    
+    mapfile -t RUNNING_CONTAINERS < <(docker ps --format "{{.Names}} ({{.Image}} - {{.Status}})")
+    
+    if [ ${#RUNNING_CONTAINERS[@]} -eq 0 ]; then
+        echo ""
+        echo -e "  ${C_YELLOW}ℹ️  Tidak ada container yang sedang berjalan saat ini.${RESET}"
+        pause_prompt
+        return
+    fi
+    
+    echo ""
+    echo -e "  Pilih nomor container yang ingin Anda hentikan:"
+    echo ""
+    for i in "${!RUNNING_CONTAINERS[@]}"; do
+        printf "  ${C_RED}[%d]${RESET} %s\n" "$((i+1))" "${RUNNING_CONTAINERS[$i]}"
+    done
+    echo ""
+    echo -e "  ${C_GRAY}[0] Batal & Kembali${RESET}"
+    echo ""
+    echo -n -e "  ${C_YELLOW}Ketik nomor pilihan [1-${#RUNNING_CONTAINERS[@]}]: ${RESET}"
+    read -r CHOICE
+    
+    if [[ "$CHOICE" =~ ^[0-9]+$ ]] && [ "$CHOICE" -ge 1 ] && [ "$CHOICE" -le "${#RUNNING_CONTAINERS[@]}" ]; then
+        TARGET=$(echo "${RUNNING_CONTAINERS[$((CHOICE-1))]}" | awk '{print $1}')
+        echo ""
+        echo -e "  ${C_BLUE}⏳ Menghentikan container ${TARGET}...${RESET}"
+        if docker stop "$TARGET" >/dev/null 2>&1; then
+            echo -e "  ${C_GREEN}${BOLD}✅ Berhasil! Container '${TARGET}' telah dihentikan.${RESET}"
+        else
+            echo -e "  ${C_RED}❌ Gagal menghentikan container '${TARGET}'.${RESET}"
+        fi
+    fi
+    pause_prompt
+}
+
+# 4. RESTART CONTAINER
+menu_restart_container() {
+    draw_banner
+    echo -e "${C_YELLOW}${BOLD} 🔄 RESTART CONTAINER${RESET}"
+    echo -e "${C_GRAY} ──────────────────────────────────────────────────────────────────────────────${RESET}"
+    
+    mapfile -t ALL_CONTAINERS < <(docker ps -a --format "{{.Names}} ({{.Image}} - {{.Status}})")
+    
+    if [ ${#ALL_CONTAINERS[@]} -eq 0 ]; then
+        echo ""
+        echo -e "  ${C_YELLOW}ℹ️  Belum ada container yang terdaftar di Docker.${RESET}"
+        pause_prompt
+        return
+    fi
+    
+    echo ""
+    echo -e "  Pilih container yang ingin Anda restart:"
+    echo ""
+    for i in "${!ALL_CONTAINERS[@]}"; do
+        printf "  ${C_CYAN}[%d]${RESET} %s\n" "$((i+1))" "${ALL_CONTAINERS[$i]}"
+    done
+    echo ""
+    echo -e "  ${C_GRAY}[0] Batal & Kembali${RESET}"
+    echo ""
+    echo -n -e "  ${C_YELLOW}Ketik nomor pilihan [1-${#ALL_CONTAINERS[@]}]: ${RESET}"
+    read -r CHOICE
+    
+    if [[ "$CHOICE" =~ ^[0-9]+$ ]] && [ "$CHOICE" -ge 1 ] && [ "$CHOICE" -le "${#ALL_CONTAINERS[@]}" ]; then
+        TARGET=$(echo "${ALL_CONTAINERS[$((CHOICE-1))]}" | awk '{print $1}')
+        echo ""
+        echo -e "  ${C_BLUE}⏳ Me-restart container ${TARGET}...${RESET}"
+        if docker restart "$TARGET" >/dev/null 2>&1; then
+            echo -e "  ${C_GREEN}${BOLD}✅ Berhasil! Container '${TARGET}' telah dimuat ulang.${RESET}"
+        else
+            echo -e "  ${C_RED}❌ Gagal me-restart container '${TARGET}'.${RESET}"
+        fi
+    fi
+    pause_prompt
+}
+
+# 5. LIHAT LOG CONTAINER
+menu_view_logs() {
+    draw_banner
+    echo -e "${C_PURPLE}${BOLD} 📜 LIHAT LOG CONTAINER${RESET}"
+    echo -e "${C_GRAY} ──────────────────────────────────────────────────────────────────────────────${RESET}"
+    
+    mapfile -t ALL_CONTAINERS < <(docker ps -a --format "{{.Names}} ({{.Image}})")
+    
+    if [ ${#ALL_CONTAINERS[@]} -eq 0 ]; then
+        echo ""
+        echo -e "  ${C_YELLOW}ℹ️  Belum ada container yang terdaftar di Docker.${RESET}"
+        pause_prompt
+        return
+    fi
+    
+    echo ""
+    echo -e "  Pilih container yang ingin Anda periksa log-nya:"
+    echo ""
+    for i in "${!ALL_CONTAINERS[@]}"; do
+        printf "  ${C_CYAN}[%d]${RESET} %s\n" "$((i+1))" "${ALL_CONTAINERS[$i]}"
+    done
+    echo ""
+    echo -e "  ${C_GRAY}[0] Batal & Kembali${RESET}"
+    echo ""
+    echo -n -e "  ${C_YELLOW}Ketik nomor pilihan [1-${#ALL_CONTAINERS[@]}]: ${RESET}"
+    read -r CHOICE
+    
+    if [[ "$CHOICE" =~ ^[0-9]+$ ]] && [ "$CHOICE" -ge 1 ] && [ "$CHOICE" -le "${#ALL_CONTAINERS[@]}" ]; then
+        TARGET=$(echo "${ALL_CONTAINERS[$((CHOICE-1))]}" | awk '{print $1}')
+        clear
+        echo -e "${C_PURPLE}${BOLD}=== 50 BARIS LOG TERAKHIR UNTUK: ${TARGET} ===${RESET}"
+        echo -e "${C_GRAY}(Tekan Ctrl+C untuk keluar jika memilih live streaming)${RESET}"
+        echo ""
+        docker logs --tail 50 "$TARGET"
+    fi
+    pause_prompt
+}
+
+# 6. MASUK KE DALAM CONTAINER (SHELL EXEC)
+menu_exec_shell() {
+    draw_banner
+    echo -e "${C_TEAL}${BOLD} 🐚 BUKA TERMINAL / SHELL DI CONTAINER${RESET}"
+    echo -e "${C_GRAY} ──────────────────────────────────────────────────────────────────────────────${RESET}"
+    
+    mapfile -t RUNNING_CONTAINERS < <(docker ps --format "{{.Names}} ({{.Image}})")
+    
+    if [ ${#RUNNING_CONTAINERS[@]} -eq 0 ]; then
+        echo ""
+        echo -e "  ${C_YELLOW}ℹ️  Hanya container yang sedang BERJALAN (Running) yang bisa dimasuki shell.${RESET}"
+        echo -e "  ${C_GRAY}Nyalakan container terlebih dahulu lewat menu [2].${RESET}"
+        pause_prompt
+        return
+    fi
+    
+    echo ""
+    echo -e "  Pilih container yang ingin Anda masuki:"
+    echo ""
+    for i in "${!RUNNING_CONTAINERS[@]}"; do
+        printf "  ${C_TEAL}[%d]${RESET} %s\n" "$((i+1))" "${RUNNING_CONTAINERS[$i]}"
+    done
+    echo ""
+    echo -e "  ${C_GRAY}[0] Batal & Kembali${RESET}"
+    echo ""
+    echo -n -e "  ${C_YELLOW}Ketik nomor pilihan [1-${#RUNNING_CONTAINERS[@]}]: ${RESET}"
+    read -r CHOICE
+    
+    if [[ "$CHOICE" =~ ^[0-9]+$ ]] && [ "$CHOICE" -ge 1 ] && [ "$CHOICE" -le "${#RUNNING_CONTAINERS[@]}" ]; then
+        TARGET=$(echo "${RUNNING_CONTAINERS[$((CHOICE-1))]}" | awk '{print $1}')
+        clear
+        echo -e "${C_GREEN}${BOLD}Masuk ke dalam container '${TARGET}'...${RESET}"
+        echo -e "${C_GRAY}Ketik 'exit' kapan saja untuk keluar dan kembali ke Dockman.${RESET}"
+        echo ""
+        docker exec -it "$TARGET" /bin/bash 2>/dev/null || docker exec -it "$TARGET" /bin/sh
+    fi
+    pause_prompt
+}
+
+# 7. MONITOR LIVE RESOURCE (DOCKER STATS)
+menu_live_stats() {
+    clear
+    echo -e "${C_CYAN}${BOLD} 📊 DOCKER LIVE STATS (CPU, MEMORY, NETWORK, DISK I/O)${RESET}"
+    echo -e "${C_YELLOW} 💡 Tekan ${C_WHITE}${BOLD}[Ctrl + C]${RESET}${C_YELLOW} kapan saja untuk kembali ke Menu Utama.${RESET}"
+    echo ""
+    docker stats --no-trunc
+    pause_prompt
+}
+
+# 8. KELOLA DOCKER IMAGE
+menu_manage_images() {
+    draw_banner
+    echo -e "${C_PURPLE}${BOLD} 🖼️  KELOLA IMAGE DOCKER${RESET}"
+    echo -e "${C_GRAY} ──────────────────────────────────────────────────────────────────────────────${RESET}"
+    echo ""
+    echo -e "  ${C_CYAN}[1]${RESET} 📋 Lihat Semua Image yang Ada di Komputer"
+    echo -e "  ${C_CYAN}[2]${RESET} 📥 Unduh / Download Image Baru (docker pull)"
+    echo -e "  ${C_CYAN}[3]${RESET} 🗑️  Hapus Image Tertentu (docker rmi)"
+    echo -e "  ${C_GRAY}[0] Kembali ke Menu Utama${RESET}"
+    echo ""
+    echo -n -e "  ${C_YELLOW}Pilih aksi [0-3]: ${RESET}"
+    read -r IMG_ACT
+    
+    case "$IMG_ACT" in
+        1)
+            draw_banner
+            echo -e "${C_PURPLE}${BOLD}Daftar Image di Komputer:${RESET}"
+            echo ""
+            docker images --format "table {{.Repository}}\t{{.Tag}}\t{{.Size}}\t{{.ID}}"
+            pause_prompt
+            ;;
+        2)
+            echo ""
+            echo -n -e "  ${C_YELLOW}Masukkan nama image yang ingin di-download (contoh: ${C_WHITE}redis:alpine${C_YELLOW} atau ${C_WHITE}nginx${C_YELLOW}): ${RESET}"
+            read -r PULL_NAME
+            if [ -n "$PULL_NAME" ]; then
+                echo ""
+                echo -e "  ${C_BLUE}⏳ Mengunduh '${PULL_NAME}' dari Docker Hub...${RESET}"
+                docker pull "$PULL_NAME"
+                echo -e "  ${C_GREEN}${BOLD}✅ Selesai! Image '${PULL_NAME}' siap digunakan.${RESET}"
+            fi
+            pause_prompt
+            ;;
+        3)
+            mapfile -t IMGS < <(docker images --format "{{.Repository}}:{{.Tag}} ({{.Size}})")
+            if [ ${#IMGS[@]} -eq 0 ]; then
+                echo -e "  ${C_YELLOW}Belum ada image yang bisa dihapus.${RESET}"
+            else
+                echo ""
+                for i in "${!IMGS[@]}"; do
+                    printf "  ${C_RED}[%d]${RESET} %s\n" "$((i+1))" "${IMGS[$i]}"
+                done
+                echo ""
+                echo -n -e "  ${C_YELLOW}Ketik nomor image yang ingin dihapus: ${RESET}"
+                read -r DEL_IMG
+                if [[ "$DEL_IMG" =~ ^[0-9]+$ ]] && [ "$DEL_IMG" -ge 1 ] && [ "$DEL_IMG" -le "${#IMGS[@]}" ]; then
+                    IMG_TAG=$(echo "${IMGS[$((DEL_IMG-1))]}" | awk '{print $1}')
+                    docker rmi "$IMG_TAG"
+                    echo -e "  ${C_GREEN}Image '${IMG_TAG}' telah dihapus.${RESET}"
+                fi
+            fi
+            pause_prompt
+            ;;
+    esac
+}
+
+# 9. JALANKAN CONTAINER CEPAT (WIZARD POPULER UNTUK PEMULA)
+menu_quick_launcher() {
+    draw_banner
+    echo -e "${C_ORANGE}${BOLD} 🚀 WIZARD MELUNCURKAN CONTAINER CEPAT (TANPA PERLU HAFAL PERINTAH)${RESET}"
+    echo -e "${C_GRAY} ──────────────────────────────────────────────────────────────────────────────${RESET}"
+    echo ""
+    echo -e "  Pilih aplikasi yang ingin Anda jalankan secara instan:"
+    echo ""
+    echo -e "  ${C_CYAN}[1]${RESET} 🌐 ${BOLD}Nginx Web Server${RESET}            - Web server cepat di port 8080"
+    echo -e "  ${C_CYAN}[2]${RESET} ⚡ ${BOLD}Redis Cache Server${RESET}          - Database in-memory di port 6379"
+    echo -e "  ${C_CYAN}[3]${RESET} 🐘 ${BOLD}PostgreSQL Database${RESET}         - Database relasional di port 5432"
+    echo -e "  ${C_CYAN}[4]${RESET} 🐬 ${BOLD}MySQL 8 Database${RESET}            - Database populer di port 3306"
+    echo -e "  ${C_CYAN}[5]${RESET} 🚢 ${BOLD}Portainer Community${RESET}         - GUI Web Dashboard untuk Docker di port 9000"
+    echo -e "  ${C_CYAN}[6]${RESET} 🐍 ${BOLD}Python 3 Sandbox${RESET}            - Lingkungan coding Python interaktif"
+    echo -e "  ${C_CYAN}[7]${RESET} 🐧 ${BOLD}Ubuntu Container Sandbox${RESET}    - Terminal Linux terisolasi untuk uji coba"
+    echo -e "  ${C_CYAN}[8]${RESET} ✍️  ${BOLD}Custom Container Wizard${RESET}     - Masukkan nama image & port sendiri"
+    echo ""
+    echo -e "  ${C_GRAY}[0] Kembali ke Menu Utama${RESET}"
+    echo ""
+    echo -n -e "  ${C_YELLOW}Pilih nomor [0-8]: ${RESET}"
+    read -r Q_CHOICE
+    
+    case "$Q_CHOICE" in
+        1)
+            echo ""
+            read -p "  Masukkan nama container [default: my-nginx]: " C_NAME
+            C_NAME=${C_NAME:-my-nginx}
+            read -p "  Masukkan port akses di komputer [default: 8080]: " C_PORT
+            C_PORT=${C_PORT:-8080}
+            echo -e "  ${C_BLUE}⏳ Menjalankan Nginx di http://localhost:${C_PORT}...${RESET}"
+            docker run -d --name "$C_NAME" -p "${C_PORT}:80" nginx:alpine
+            echo -e "  ${C_GREEN}${BOLD}✅ Nginx aktif! Buka browser Anda di: ${C_CYAN}http://localhost:${C_PORT}${RESET}"
+            pause_prompt
+            ;;
+        2)
+            echo ""
+            read -p "  Masukkan nama container [default: my-redis]: " C_NAME
+            C_NAME=${C_NAME:-my-redis}
+            echo -e "  ${C_BLUE}⏳ Menjalankan Redis di port 6379...${RESET}"
+            docker run -d --name "$C_NAME" -p 6379:6379 redis:alpine
+            echo -e "  ${C_GREEN}${BOLD}✅ Redis aktif di port 6379!${RESET}"
+            pause_prompt
+            ;;
+        3)
+            echo ""
+            read -p "  Masukkan nama container [default: my-postgres]: " C_NAME
+            C_NAME=${C_NAME:-my-postgres}
+            read -p "  Masukkan password database [default: postgres]: " C_PASS
+            C_PASS=${C_PASS:-postgres}
+            echo -e "  ${C_BLUE}⏳ Menjalankan PostgreSQL di port 5432...${RESET}"
+            docker run -d --name "$C_NAME" -e POSTGRES_PASSWORD="$C_PASS" -p 5432:5432 postgres:alpine
+            echo -e "  ${C_GREEN}${BOLD}✅ Postgres aktif di port 5432 (User: postgres, Pass: ${C_PASS})!${RESET}"
+            pause_prompt
+            ;;
+        4)
+            echo ""
+            read -p "  Masukkan nama container [default: my-mysql]: " C_NAME
+            C_NAME=${C_NAME:-my-mysql}
+            read -p "  Masukkan root password [default: secret123]: " C_PASS
+            C_PASS=${C_PASS:-secret123}
+            echo -e "  ${C_BLUE}⏳ Menjalankan MySQL di port 3306...${RESET}"
+            docker run -d --name "$C_NAME" -e MYSQL_ROOT_PASSWORD="$C_PASS" -p 3306:3306 mysql:8
+            echo -e "  ${C_GREEN}${BOLD}✅ MySQL aktif di port 3306 (User: root, Pass: ${C_PASS})!${RESET}"
+            pause_prompt
+            ;;
+        5)
+            echo ""
+            echo -e "  ${C_BLUE}⏳ Memasang Portainer Web GUI Dashboard...${RESET}"
+            docker volume create portainer_data >/dev/null 2>&1
+            docker run -d -p 9000:9000 -p 9443:9443 --name portainer --restart=always -v /var/run/docker.sock:/var/run/docker.sock -v portainer_data:/data portainer/portainer-ce:latest
+            echo -e "  ${C_GREEN}${BOLD}✅ Portainer Web GUI aktif! Buka browser di: ${C_CYAN}http://localhost:9000${RESET}"
+            pause_prompt
+            ;;
+        6)
+            clear
+            echo -e "${C_CYAN}${BOLD}🐍 Membuka Python 3 Interactive Sandbox...${RESET}"
+            echo -e "${C_GRAY}(Container otomatis terhapus saat Anda mengetik exit())${RESET}"
+            echo ""
+            docker run -it --rm python:alpine python3
+            ;;
+        7)
+            clear
+            echo -e "${C_CYAN}${BOLD}🐧 Membuka Ubuntu Linux Sandbox...${RESET}"
+            echo -e "${C_GRAY}(Container otomatis terhapus saat Anda mengetik exit)${RESET}"
+            echo ""
+            docker run -it --rm ubuntu:latest bash
+            ;;
+        8)
+            echo ""
+            read -p "  Masukkan nama image Docker (contoh: httpd:alpine): " C_IMG
+            if [ -z "$C_IMG" ]; then return; fi
+            read -p "  Masukkan nama untuk container: " C_NAME
+            read -p "  Masukkan mapping port (contoh 8080:80, kosongkan jika tidak ada): " C_PORT
+            
+            CMD="docker run -d"
+            [ -n "$C_NAME" ] && CMD="$CMD --name $C_NAME"
+            [ -n "$C_PORT" ] && CMD="$CMD -p $C_PORT"
+            CMD="$CMD $C_IMG"
+            
+            echo -e "  ${C_BLUE}Menjalankan: $CMD${RESET}"
+            eval "$CMD"
+            echo -e "  ${C_GREEN}✅ Container berhasil diluncurkan!${RESET}"
+            pause_prompt
+            ;;
+    esac
+}
+
+# 10. HAPUS CONTAINER
+menu_remove_container() {
+    draw_banner
+    echo -e "${C_RED}${BOLD} ❌ HAPUS CONTAINER (REMOVE)${RESET}"
+    echo -e "${C_GRAY} ──────────────────────────────────────────────────────────────────────────────${RESET}"
+    
+    mapfile -t ALL_CONTAINERS < <(docker ps -a --format "{{.Names}} ({{.Image}} - {{.Status}})")
+    
+    if [ ${#ALL_CONTAINERS[@]} -eq 0 ]; then
+        echo ""
+        echo -e "  ${C_YELLOW}ℹ️  Belum ada container yang terdaftar.${RESET}"
+        pause_prompt
+        return
+    fi
+    
+    echo ""
+    echo -e "  Pilih container yang ingin Anda hapus selamanya:"
+    echo ""
+    for i in "${!ALL_CONTAINERS[@]}"; do
+        printf "  ${C_RED}[%d]${RESET} %s\n" "$((i+1))" "${ALL_CONTAINERS[$i]}"
+    done
+    echo ""
+    echo -e "  ${C_GRAY}[0] Batal & Kembali${RESET}"
+    echo ""
+    echo -n -e "  ${C_YELLOW}Ketik nomor pilihan: ${RESET}"
+    read -r CHOICE
+    
+    if [[ "$CHOICE" =~ ^[0-9]+$ ]] && [ "$CHOICE" -ge 1 ] && [ "$CHOICE" -le "${#ALL_CONTAINERS[@]}" ]; then
+        TARGET=$(echo "${ALL_CONTAINERS[$((CHOICE-1))]}" | awk '{print $1}')
+        echo ""
+        echo -n -e "  ${C_RED}${BOLD}⚠️  Yakin ingin menghapus container '${TARGET}'? [y/N]: ${RESET}"
+        read -r CONFIRM
+        if [[ "$CONFIRM" =~ ^[yY]$ ]]; then
+            docker rm -f "$TARGET" >/dev/null 2>&1
+            echo -e "  ${C_GREEN}✅ Container '${TARGET}' berhasil dihapus.${RESET}"
+        else
+            echo -e "  ${C_GRAY}Dibatalkan.${RESET}"
+        fi
+    fi
+    pause_prompt
+}
+
+# 11. BERSIHKAN SAMPAH DOCKER (PRUNE)
+menu_prune_system() {
+    draw_banner
+    echo -e "${C_YELLOW}${BOLD} 🧹 BERSIHKAN SAMPAH & HEMAT RUANG DISK DOCKER${RESET}"
+    echo -e "${C_GRAY} ──────────────────────────────────────────────────────────────────────────────${RESET}"
+    echo ""
+    echo -e "  Fitur ini akan membersihkan secara otomatis:"
+    echo -e "  ${C_CYAN}•${RESET} Semua container yang sudah berhenti (status Exited)"
+    echo -e "  ${C_CYAN}•${RESET} Semua network buatan yang tidak lagi digunakan"
+    echo -e "  ${C_CYAN}•${RESET} Semua image yang menggantung / usang (dangling images)"
+    echo -e "  ${C_CYAN}•${RESET} Semua sisa build cache Docker"
+    echo ""
+    echo -n -e "  ${C_YELLOW}${BOLD}Lanjutkan pembersihan sampah disk? [y/N]: ${RESET}"
+    read -r CONFIRM
+    
+    if [[ "$CONFIRM" =~ ^[yY]$ ]]; then
+        echo ""
+        echo -e "  ${C_BLUE}⏳ Sedang membersihkan...${RESET}"
+        docker system prune -f
+        echo ""
+        echo -e "  ${C_GREEN}${BOLD}✅ Pembersihan selesai! Ruang penyimpanan harddisk Anda telah dipulihkan.${RESET}"
+    else
+        echo -e "  ${C_GRAY}Pembersihan dibatalkan.${RESET}"
+    fi
+    pause_prompt
+}
+
+# 12. INFORMASI DETAIL DOCKER
+menu_system_info() {
+    draw_banner
+    echo -e "${C_CYAN}${BOLD} ℹ️  INFORMASI SISTEM DOCKER HOST${RESET}"
+    echo -e "${C_GRAY} ──────────────────────────────────────────────────────────────────────────────${RESET}"
+    echo ""
+    docker info | head -n 35 | while IFS= read -r line; do
+        echo -e "  ${C_WHITE}$line${RESET}"
+    done
+    pause_prompt
+}
+
+# LOOP UTAMA MENU
+while true; do
+    draw_banner
+    echo -e "  ${C_WHITE}${BOLD}MENU UTAMA MANAJEMEN CONTAINER:${RESET}"
+    echo -e "  ${C_GRAY}──────────────────────────────────────────────────────────────────────────────${RESET}"
+    echo -e "  ${C_CYAN}[1]${RESET}  📋 ${BOLD}Lihat Semua Container${RESET}      ${C_GRAY}- Cek daftar container aktif & non-aktif${RESET}"
+    echo -e "  ${C_GREEN}[2]${RESET}  ▶️  ${BOLD}Nyalakan Container${RESET}         ${C_GRAY}- Start container yang sedang mati${RESET}"
+    echo -e "  ${C_RED}[3]${RESET}  ⏹️  ${BOLD}Hentikan Container${RESET}         ${C_GRAY}- Stop container yang sedang berjalan${RESET}"
+    echo -e "  ${C_YELLOW}[4]${RESET}  🔄 ${BOLD}Restart Container${RESET}          ${C_GRAY}- Muat ulang container yang bermasalah${RESET}"
+    echo -e "  ${C_PURPLE}[5]${RESET}  📜 ${BOLD}Lihat Log Container${RESET}        ${C_GRAY}- Intip pesan error & output log container${RESET}"
+    echo -e "  ${C_TEAL}[6]${RESET}  🐚 ${BOLD}Terminal / Shell Masuk${RESET}     ${C_GRAY}- Buka console interaktif (bash/sh) container${RESET}"
+    echo -e "  ${C_CYAN}[7]${RESET}  📊 ${BOLD}Monitor Live Resource${RESET}      ${C_GRAY}- Pantau penggunaan CPU, RAM, & Traffic${RESET}"
+    echo -e "  ${C_PURPLE}[8]${RESET}  🖼️  ${BOLD}Kelola Docker Image${RESET}        ${C_GRAY}- Lihat, download (pull), atau hapus image${RESET}"
+    echo -e "  ${C_ORANGE}[9]${RESET}  🚀 ${BOLD}Jalankan Container Cepat${RESET}   ${C_GRAY}- Wizard instan (Nginx, Redis, Postgres, dll)${RESET}"
+    echo -e "  ${C_RED}[10]${RESET} ❌ ${BOLD}Hapus Container${RESET}            ${C_GRAY}- Buang container yang sudah tidak terpakai${RESET}"
+    echo -e "  ${C_YELLOW}[11]${RESET} 🧹 ${BOLD}Bersihkan Sampah Docker${RESET}    ${C_GRAY}- Bersihkan disk & cache yang menumpuk${RESET}"
+    echo -e "  ${C_GRAY}[12]${RESET} ℹ️  ${BOLD}Informasi Sistem Docker${RESET}    ${C_GRAY}- Status teknis host & storage driver${RESET}"
+    echo ""
+    echo -e "  ${C_GRAY}[0]  🚪 Keluar${RESET}"
+    echo -e "  ${C_GRAY}──────────────────────────────────────────────────────────────────────────────${RESET}"
+    echo -n -e "  ${C_YELLOW}Pilih nomor menu [0-12]: ${RESET}"
+    read -r MAIN_CHOICE
+    
+    case "$MAIN_CHOICE" in
+        1)  menu_list_containers ;;
+        2)  menu_start_container ;;
+        3)  menu_stop_container ;;
+        4)  menu_restart_container ;;
+        5)  menu_view_logs ;;
+        6)  menu_exec_shell ;;
+        7)  menu_live_stats ;;
+        8)  menu_manage_images ;;
+        9)  menu_quick_launcher ;;
+        10) menu_remove_container ;;
+        11) menu_prune_system ;;
+        12) menu_system_info ;;
+        0|q|Q|exit)
+            clear
+            echo -e "${C_DOCKER_BLUE}${BOLD}Terima kasih telah menggunakan Docker TUI Manager! 🐳${RESET}"
+            exit 0
+            ;;
+        *)
+            echo -e "${C_RED}Pilihan tidak valid. Silakan masukkan nomor antara 0 sampai 12.${RESET}"
+            sleep 1
+            ;;
+    esac
+done

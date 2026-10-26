@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=ClipVault (Clipboard & Snippets)
+Comment=Smart Clipboard History & Snippet Vault
+Exec=kitty --class clipvault-term -T "📋 ClipVault Manager" -e /home/ario/.local/bin/clipvault
+Icon=edit-copy
+Terminal=false
+Type=Application
+Categories=Utility;
+Keywords=clipboard;copy;paste;snippet;vault;clipvault;

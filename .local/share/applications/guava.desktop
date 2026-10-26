@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Guava Toolbox
+Comment=Linux Ricing, App Installer, Tech Stack & System Suite
+Exec=kitty --class guava-term -T "Guava Toolbox" -e guava
+Icon=utilities-terminal
+Terminal=false
+Type=Application
+Categories=Utility;System;Development;
+Keywords=guava;ricing;installer;system;tools;

@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=LANShare (WiFi File Transfer)
+Comment=Local WiFi File Transfer with QR Code & Web Portal
+Exec=kitty --class lanshare-term -T "📲 LANShare WiFi Transfer" -e /home/ario/.local/bin/lanshare
+Icon=network-transmit-receive
+Terminal=false
+Type=Application
+Categories=Network;Utility;
+Keywords=share;transfer;wifi;mobile;qr;download;upload;

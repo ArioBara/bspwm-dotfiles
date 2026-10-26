@@ -1,0 +1,119 @@
+/**
+ * Catppuccin Mocha theme for Rofi
+ **/
+
+@import "colors.rasi"
+
+* {
+    width: 600;
+    font: "JetBrainsMono Nerd Font 10";
+}
+
+element-text, element-icon , mode-switcher {
+    background-color: inherit;
+    text-color:       inherit;
+}
+
+window {
+    height: 420px;
+    border: 2px;
+    border-radius: 12px;
+    border-color: @border-col;
+    background-color: @bg-col;
+}
+
+mainbox {
+    background-color: @bg-col;
+    padding: 15px;
+}
+
+inputbar {
+    children: [prompt,entry];
+    background-color: @bg-col-light;
+    border-radius: 8px;
+    padding: 8px;
+    margin: 0px 0px 10px 0px;
+}
+
+prompt {
+    background-color: @mauve;
+    padding: 6px 12px;
+    text-color: #11111b;
+    border-radius: 6px;
+    margin: 0px 10px 0px 0px;
+    font: "JetBrainsMono Nerd Font Bold 10";
+}
+
+textbox-prompt-colon {
+    expand: false;
+    str: ":";
+}
+
+entry {
+    padding: 6px;
+    margin: 0px 0px 0px 5px;
+    text-color: @fg-col;
+    background-color: transparent;
+    placeholder: "Search applications...";
+    placeholder-color: @grey;
+}
+
+listview {
+    border: 0px 0px 0px;
+    padding: 6px 0px 0px;
+    margin: 10px 0px 0px 0px;
+    columns: 2;
+    lines: 7;
+    background-color: @bg-col;
+}
+
+element {
+    padding: 8px;
+    background-color: @bg-col;
+    text-color: @fg-col;
+    border-radius: 8px;
+    margin: 2px;
+}
+
+element-icon {
+    size: 24px;
+    margin: 0px 10px 0px 0px;
+}
+
+element selected {
+    background-color:  @selected-col;
+    text-color: @mauve;
+    border: 1px;
+    border-color: @mauve;
+}
+
+mode-switcher {
+    spacing: 0;
+}
+
+button {
+    padding: 10px;
+    background-color: @bg-col-light;
+    text-color: @grey;
+    vertical-align: 0.5; 
+    horizontal-align: 0.5;
+}
+
+button selected {
+  background-color: @bg-col;
+  text-color: @blue;
+}
+
+message {
+    background-color: @bg-col-light;
+    margin: 2px;
+    padding: 2px;
+    border-radius: 5px;
+}
+
+textbox {
+    padding: 6px;
+    margin: 20px 0px 0px 20px;
+    text-color: @blue;
+    background-color: @bg-col-light;
+}

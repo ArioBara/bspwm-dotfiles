@@ -1,0 +1,16 @@
+# Update repository lists:
+sudo apt update
+
+# Install Chromium native deb package without snapd:
+# Linux Mint provides a native deb build in packages.linuxmint.com.
+# Standard Ubuntu users will automatically use ppa:xtradeb/apps to avoid snapd.
+if apt-cache policy chromium 2>/dev/null | grep -q 'packages.linuxmint.com'; then
+    sudo apt install -y chromium
+else
+    sudo add-apt-repository -y ppa:xtradeb/apps 2>/dev/null || true
+    sudo apt update
+    sudo apt install -y chromium
+fi
+
+# Verify installation:
+chromium --version 2>/dev/null || chromium-browser --version

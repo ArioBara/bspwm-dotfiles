@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=QuickNote (Scratchpad TUI)
+Comment=Minimalist Scratchpad & Markdown Quick Notes
+Exec=kitty --class quicknote-term -T "📝 QuickNote Scratchpad" -e /home/ario/.local/bin/quicknote
+Icon=accessories-text-editor
+Terminal=false
+Type=Application
+Categories=Office;Utility;
+Keywords=notes;scratchpad;memo;markdown;todo;

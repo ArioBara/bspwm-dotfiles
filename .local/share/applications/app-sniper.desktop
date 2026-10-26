@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=App Sniper (Process Killer)
+Comment=Visual Zombie App & Resource Hog Process Killer
+Exec=kitty --class sniper-term -T "🎯 App Sniper Process Killer" -e /home/ario/.local/bin/app-sniper
+Icon=system-software-install
+Terminal=false
+Type=Application
+Categories=System;Utility;
+Keywords=kill;process;cpu;ram;zombie;task;manager;freeze;

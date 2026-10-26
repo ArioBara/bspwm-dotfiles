@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Autostart Manager
+Comment=Manage Autostart Applications and Startup Services
+Exec=kitty --class autostart-term -T "⚙️ Autostart Manager" -e /home/ario/.local/bin/autostart-manager
+Icon=preferences-system-session-services
+Terminal=false
+Type=Application
+Categories=Settings;System;Utility;
+Keywords=autostart;startup;services;boot;daemon;bspwm;

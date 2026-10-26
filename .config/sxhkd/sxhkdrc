@@ -1,0 +1,295 @@
+# ==============================================================================
+#  SXHKD CONFIGURATION - KEYBINDINGS
+# ==============================================================================
+
+# --- Applications & Launchers ---
+# Kitty Terminal
+super + Return
+	kitty
+
+# Floating Terminal
+super + shift + Return
+	kitty --class kitty-float
+
+# App Launcher (Super + Space or Super + D)
+super + {d,space}
+	~/.config/rofi/launcher.sh
+
+# Dynamic Theme Switcher
+super + alt + space
+	~/.config/bspwm/scripts/theme_switcher.sh
+
+# Activity Monitor (btop in floating terminal)
+super + alt + b
+	kitty --class btop-term -e btop
+
+# Docker TUI Manager (Dockman)
+super + alt + d
+	kitty --class dockman-term -T "🐳 Docker TUI Manager" -e /home/ario/.local/bin/dockman
+
+# Gitman - Git Project Dashboard
+super + alt + g
+	kitty --class gitman-term -T "󰊢 Git Project Dashboard (Gitman)" -e /home/ario/.local/bin/gitman
+
+# ClipVault - Smart Clipboard & Snippet Vault
+super + alt + v
+	kitty --class clipvault-term -T "📋 ClipVault Manager" -e /home/ario/.local/bin/clipvault
+
+# QuickNote - Scratchpad & Markdown Notes
+super + alt + n
+	kitty --class quicknote-term -T "📝 QuickNote Scratchpad" -e /home/ario/.local/bin/quicknote
+
+# App Sniper - Visual Process & Zombie Killer
+super + alt + s
+	kitty --class sniper-term -T "🎯 App Sniper Process Killer" -e /home/ario/.local/bin/app-sniper
+
+# Autostart Manager - Kelola Aplikasi & Layanan Startup
+super + alt + a
+	kitty --class autostart-term -T "⚙️ Autostart Manager" -e /home/ario/.local/bin/autostart-manager
+
+# Guava Ricing Toolbox
+super + g
+	kitty --class guava-term -T "Guava Toolbox" -e guava
+
+# Rofi Window Switcher
+super + Tab
+	rofi -show window -theme ~/.config/rofi/mocha.rasi
+
+# Rofi Powermenu
+super + x
+	~/.config/rofi/powermenu.sh
+
+# Desktop Context Menu (via Keyboard)
+Menu
+	/home/ario/.local/bin/desktop-menu
+
+# Rofi Action Center / Control Panel
+super + {p,shift + c}
+	~/.config/rofi/controlcenter.sh
+
+# Shortcut Cheatsheet Popup (Searchable cheatsheet)
+super + {F1,slash,alt + k}
+	~/.config/bspwm/scripts/shortcut_rofi.sh
+
+# Terminal Cheatsheet
+super + shift + slash
+	kitty --class shortcut-term -e ~/.config/bspwm/scripts/shortcut.sh
+
+# Ricing: tty-clock in floating terminal
+super + t
+	kitty --class clock-term -e tty-clock -c -C 4 -B -s
+
+# Ricing: CAVA visualizer in floating terminal
+super + c
+	kitty --class cava-term -e cava
+
+# YouTube Music TUI (Catppuccin Mocha Floating)
+super + y
+	kitty --class ytmusic-term -e ytmusic
+
+# Tailscale & Honcho Network Monitor (Catppuccin Mocha Floating)
+super + ctrl + m
+	kitty --class netmon-term -T "Mesh & Honcho Monitor • by ArioDev7" -e netmon
+
+# Ricing: CMatrix digital rain (Catppuccin Mauve)
+super + alt + m
+	kitty -e cmatrix -C magenta -u 3 -s
+
+# Ricing: Ranger TUI File Manager
+super + o
+	kitty --class ranger-term -e ranger
+
+# Code Editor: Neovim
+super + v
+	kitty -e nvim
+
+# File Manager GUI
+super + e
+	nemo || caja || kitty -e fish
+
+# Wallpaper Switcher (Cycle next wallpaper)
+super + alt + w
+	~/.config/bspwm/scripts/set_wallpaper.sh random
+
+# --- Window Management ---
+# Close window (Smart close with Electron/VS Code support)
+super + q
+	~/.config/bspwm/scripts/close_window.sh
+
+# Force Kill window
+super + shift + q
+	bspc node -k
+
+# Alternate close key
+super + w
+	~/.config/bspwm/scripts/close_window.sh
+
+# Maximize / Fullscreen
+super + f
+	bspc node -t ~fullscreen
+
+# Monocle Mode (Maximize window within tiled layout)
+super + m
+	bspc desktop -l next
+
+# Minimize / Hide window
+super + {minus,n}
+	bspc node -g hidden=on
+
+# Restore / Unhide last minimized window
+super + shift + {minus,n}
+	bspc node any.hidden.local -g hidden=off -f
+
+# Toggle Floating
+super + shift + space
+	bspc node -t ~floating
+
+super + s
+	bspc node -t ~floating
+
+# Focus node in given direction
+super + {h,j,k,l}
+	bspc node -f {west,south,north,east}
+
+super + {Left,Down,Up,Right}
+	bspc node -f {west,south,north,east}
+
+# Swap node in given direction
+super + shift + {h,j,k,l}
+	bspc node -s {west,south,north,east}
+
+super + shift + {Left,Down,Up,Right}
+	bspc node -s {west,south,north,east}
+
+# Rotate Layout (Putar arah pembagian jendela 90 derajat)
+super + r
+	bspc node @parent -R 90
+
+# Balance Layout (Ratakan ukuran semua jendela yang terbagi)
+super + b
+	bspc node @parent -E
+
+# Preselect split direction (Pilih posisi jendela berikutnya: kiri, bawah, atas, kanan)
+super + ctrl + {h,j,k,l}
+	bspc node -p {west,south,north,east}
+
+super + ctrl + {Left,Down,Up,Right}
+	bspc node -p {west,south,north,east}
+
+# Cancel Preselection
+super + ctrl + space
+	bspc node -p cancel
+
+# --- Workspaces: Focused Monitor (1 - 6) ---
+# Focus desktop 1-6 on the currently active monitor
+super + {1-6}
+	bspc desktop -f 'focused:^{1-6}'
+
+# Send window to desktop 1-6 on the currently active monitor
+super + shift + {1-6}
+	bspc node -d 'focused:^{1-6}' --follow
+
+# --- Workspaces: Secondary / Other Monitor ---
+# Focus desktop 1-6 on the other monitor
+super + ctrl + {1-6}
+	bspc desktop -f 'next:^{1-6}'
+
+# Send window to desktop 1-6 on the other monitor
+super + ctrl + shift + {1-6}
+	bspc node -d 'next:^{1-6}' --follow
+
+# --- Multi-Monitor & Display Controls ---
+# Focus next/previous monitor
+super + {comma,period}
+	bspc monitor -f {prev,next}
+
+# Send window to next/previous monitor and follow
+super + shift + {comma,period}
+	bspc node -m {prev,next} --follow
+
+# Display Setup Menu (Rofi)
+super + shift + d
+	~/.config/bspwm/scripts/display.sh menu
+
+# FN Display Key
+XF86Display
+	~/.config/bspwm/scripts/display.sh menu
+
+# --- Window Resizing ---
+# Expand a window by moving one of its side outward
+super + alt + {h,j,k,l}
+	bspc node -z {left -20 0,bottom 0 20,top 0 -20,right 20 0}
+
+# Contract a window by moving one of its side inward
+super + alt + shift + {h,j,k,l}
+	bspc node -z {right -20 0,top 0 20,bottom 0 -20,left 20 0}
+
+# Adjust Window Gaps (Perbesar / Perkecil celah antar jendela secara instan)
+super + bracketright
+	bspc config window_gap $(( $(bspc config window_gap) + 6 ))
+
+super + bracketleft
+	bspc config window_gap $(( $(bspc config window_gap) > 0 ? $(bspc config window_gap) - 6 : 0 ))
+
+# --- Mouse Window Controls handled natively by BSPWM (pointer_modifier mod4) ---
+
+# --- System & Session Control (Standard Arch / i3 / BSPWM) ---
+# Restart BSPWM
+super + shift + r
+	bspc wm -r && notify-send -u low -i "system-restart" "BSPWM" "Config reloaded"
+
+# Screen Recorder (SimpleScreenRecorder)
+super + {alt + r,shift + Print}
+	simplescreenrecorder || notify-send -u normal "Screen Recorder" "Buka SimpleScreenRecorder"
+
+# Exit / Power Menu (Standard Super + Shift + E or Super + X)
+super + {shift + e,x}
+	~/.config/rofi/powermenu.sh
+
+# Reload SXHKD Configuration
+super + Escape
+	pkill -USR1 -x sxhkd && notify-send -u low -i "system-restart" "SXHKD" "Hotkeys reloaded"
+
+# --- Audio & Media Controls ---
+XF86AudioRaiseVolume
+	~/.config/bspwm/scripts/volume.sh up
+
+XF86AudioLowerVolume
+	~/.config/bspwm/scripts/volume.sh down
+
+XF86AudioMute
+	~/.config/bspwm/scripts/volume.sh mute
+
+XF86AudioPlay
+	~/.config/bspwm/scripts/media.sh play-pause
+
+XF86AudioNext
+	~/.config/bspwm/scripts/media.sh next
+
+XF86AudioPrev
+	~/.config/bspwm/scripts/media.sh prev
+
+# --- Brightness Controls ---
+XF86MonBrightnessUp
+	~/.config/bspwm/scripts/brightness.sh up
+
+XF86MonBrightnessDown
+	~/.config/bspwm/scripts/brightness.sh down
+
+# --- Screenshot Tool (Flameshot) ---
+Print
+	flameshot full -p ~/Pictures/Screenshots -c
+
+super + shift + s
+	sleep 0.2 && flameshot gui
+
+super + Print
+	sleep 0.2 && flameshot gui
+
+# --- Keyboard RGB Backlight (Scroll Lock) ---
+Scroll_Lock
+	~/.config/bspwm/scripts/rgb_keyboard.sh toggle
+
+super + F9
+	~/.config/bspwm/scripts/rgb_keyboard.sh toggle
+

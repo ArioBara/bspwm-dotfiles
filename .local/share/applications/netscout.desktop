@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=NetScout (WiFi & Network Scanner)
+Comment=WiFi & Local Network Scanner & Ping Monitor
+Exec=kitty --class netscout-term -T "📡 NetScout Network Scanner" -e /home/ario/.local/bin/netscout
+Icon=network-wireless
+Terminal=false
+Type=Application
+Categories=Network;System;
+Keywords=network;wifi;scan;ping;ip;mac;devices;speed;

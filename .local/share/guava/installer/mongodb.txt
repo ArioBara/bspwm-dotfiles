@@ -1,0 +1,19 @@
+# Add MongoDB official GPG key:
+sudo apt update
+sudo apt install -y gnupg curl
+curl -fsSL https://www.mongodb.org/static/pgp/server-8.0.asc | \
+   sudo gpg -o /usr/share/keyrings/mongodb-server-8.0.gpg \
+   --dearmor --yes
+
+# Add MongoDB repository to Apt sources:
+echo "deb [ arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/mongodb-server-8.0.gpg ] https://repo.mongodb.org/apt/ubuntu $(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}")/mongodb-org/8.0 multiverse" | \
+   sudo tee /etc/apt/sources.list.d/mongodb-org-8.0.list
+
+# Reload package database:
+sudo apt update
+
+# Install MongoDB Community Server and mongosh:
+sudo apt install -y mongodb-org mongodb-mongosh
+
+# Enable and start MongoDB service:
+sudo systemctl enable --now mongod

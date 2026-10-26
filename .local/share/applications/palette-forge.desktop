@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Palette Forge (Theme Extractor)
+Comment=Wallpaper Color Extractor & Theme Forge
+Exec=kitty --class palette-term -T "🎨 Palette Forge Theme Engine" -e /home/ario/.local/bin/palette-forge
+Icon=preferences-desktop-theme
+Terminal=false
+Type=Application
+Categories=Graphics;Utility;
+Keywords=palette;color;wallpaper;theme;rice;bspwm;

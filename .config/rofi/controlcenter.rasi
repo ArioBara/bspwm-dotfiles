@@ -1,0 +1,88 @@
+/**
+ * Catppuccin Mocha Control Center / Action Center Theme for Rofi
+ **/
+
+@import "colors.rasi"
+
+* {
+    font: "JetBrainsMono Nerd Font 10";
+}
+
+element-text, element-icon {
+    background-color: inherit;
+    text-color:       inherit;
+}
+
+window {
+    width: 480px;
+    height: 580px;
+    location: north east;
+    anchor: north east;
+    x-offset: -18px;
+    y-offset: 42px;
+    border: 2px;
+    border-radius: 12px;
+    border-color: @border-col;
+    background-color: @bg-col;
+}
+
+mainbox {
+    background-color: @bg-col;
+    padding: 12px;
+    children: [inputbar, listview];
+}
+
+inputbar {
+    children: [prompt, entry];
+    background-color: @bg-col-light;
+    border-radius: 8px;
+    padding: 8px 12px;
+    margin: 0px 0px 8px 0px;
+}
+
+prompt {
+    background-color: @mauve;
+    padding: 6px 12px;
+    text-color: #11111b;
+    border-radius: 6px;
+    font: "JetBrainsMono Nerd Font Bold 10";
+}
+
+entry {
+    padding: 6px;
+    margin: 0px 0px 0px 6px;
+    text-color: @fg-col;
+    background-color: transparent;
+    placeholder: "Cari pengaturan cepat...";
+    placeholder-color: @grey;
+}
+
+listview {
+    border: 0px;
+    padding: 4px 0px 0px 0px;
+    margin: 4px 0px 0px 0px;
+    columns: 1;
+    lines: 11;
+    cycle: true;
+    scrollbar: false;
+    background-color: @bg-col;
+}
+
+element {
+    padding: 7px 12px;
+    background-color: @bg-col;
+    text-color: @fg-col;
+    border-radius: 8px;
+    margin: 2px 0px;
+}
+
+element selected {
+    background-color: @selected-col;
+    text-color: @mauve;
+    border: 1px;
+    border-color: @mauve;
+}
+
+element-text {
+    vertical-align: 0.5;
+}

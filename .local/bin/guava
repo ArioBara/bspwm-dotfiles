@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# Guava Ricing Toolbox Global Launcher
+if [ -f "$HOME/.local/share/guava/guava_toolbox.py" ]; then
+    exec python3 "$HOME/.local/share/guava/guava_toolbox.py" "$@"
+elif [ -f "$HOME/bspwm-catppuccin-rice/guava/guava_toolbox.py" ]; then
+    exec python3 "$HOME/bspwm-catppuccin-rice/guava/guava_toolbox.py" "$@"
+elif [ -f "/media/sf_Shared/Downloads/scripts/ricing/guava_toolbox.py" ]; then
+    exec python3 "/media/sf_Shared/Downloads/scripts/ricing/guava_toolbox.py" "$@"
+else
+    echo -e "\033[31m[!] Guava Toolbox files not found in ~/.local/share/guava or /media/sf_Shared\033[0m"
+    exit 1
+fi
